@@ -2,11 +2,13 @@
   "name": "kudu-db-couch",
   "version": "0.1.0",
   "scripts": {
-    "compile": "babel -d lib/ src/**/*.es src/*.es test/**/*.es test/*.es",
+    "compile": "babel -d lib/ src/*.es6",
     "test": "npm run compile && mocha lib/test/ -R spec --recursive"
   },
   "main": "lib/src/kudu-db-couch.js",
-  "dependencies": {},
+  "dependencies": {
+    "qouch": "mammaldev/qouch#v0.5.0"
+  },
   "devDependencies": {
     "babel": "^4.0.1",
     "chai": "^1.10.0",
