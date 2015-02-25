@@ -7,7 +7,8 @@ export default class CouchAdapter {
 
   get [ defaults ]() {
     return {
-      views: {}
+      views: {},
+      documentToModel: ( doc ) => doc
     }
   }
 
@@ -71,5 +72,13 @@ export default class CouchAdapter {
 
   delete( model ) {
     this.qouch.destroy(model.toJSON(true));
+  }
+
+  // CouchDB-specific methods. Kudu database adapters must implement all of the
+  // methods listed above. Any listed below are unique to CouchDB.
+
+  getFromView( design = '', view = '', config = {} ) {
+    return this.qouch.viewDocs(design, view, config)
+    .then(( docs ) => docs.map(this.config.documentToModel));
   }
 }
