@@ -29,7 +29,8 @@ export default class CouchAdapter {
   }
 
   get( type, id ) {
-    return this.qouch.get(id);
+    return this.qouch.get(id)
+    .then(( doc ) => this.config.documentToModel(doc));
   }
 
   getAll( type ) {
@@ -46,7 +47,8 @@ export default class CouchAdapter {
 
     return this.qouch.viewDocs(doc.design, doc.view, {
       rootKey: [ type ]
-    });
+    })
+    .then(( docs ) => docs.map(( doc ) => this.config.documentToModel(doc)));
   }
 
   getDescendants( ancestorType, ancestorId, descendantType ) {
@@ -63,7 +65,8 @@ export default class CouchAdapter {
 
     return this.qouch.viewDocs(doc.design, doc.view, {
       key: [ descendantType, ancestorType, ancestorId ]
-    });
+    })
+    .then(( docs ) => docs.map(( doc ) => this.config.documentToModel(doc)));
   }
 
   update( model ) {
