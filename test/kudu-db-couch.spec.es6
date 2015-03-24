@@ -1,4 +1,4 @@
-import qouchMockFactory from '../../node_modules/qouch/test/qouch-mock';
+import qouchMockFactory from '../node_modules/qouch/test/qouch-mock';
 import proxyquire from 'proxyquire';
 import chai from 'chai';
 

@@ -2,10 +2,10 @@
   "name": "kudu-db-couch",
   "version": "0.1.0",
   "scripts": {
-    "compile": "babel -s -d lib/ {src,test}/*.es6",
-    "test": "npm run compile && mocha lib/**/*.spec.js -R spec --recursive"
+    "compile": "babel -s -d lib/ src/",
+    "test": "mocha test/ -R spec --recursive --compilers es6:babel/register"
   },
-  "main": "lib/src/kudu-db-couch.js",
+  "main": "lib/kudu-db-couch.js",
   "dependencies": {
     "qouch": "mammaldev/qouch#v0.5.0",
     "core-js": "^0.5.4"
