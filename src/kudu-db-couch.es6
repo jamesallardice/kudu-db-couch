@@ -1,5 +1,5 @@
 import 'core-js/shim';
-import Qouch from 'qouch';
+import CouchPromised from 'couch-promised';
 
 let defaults = Symbol();
 
@@ -8,24 +8,25 @@ export default class CouchAdapter {
   get [ defaults ]() {
     return {
       views: {},
-      documentToModel: ( doc ) => doc
-    }
+      documentToModel: ( doc ) => doc,
+    };
   }
 
   constructor( kudu, config = {} ) {
 
     this.config = Object.assign({}, this[ defaults ], config);
 
-    if ( !this.config.hasOwnProperty('url') ) {
-      throw new Error('CouchDB adapter requires a database URL.');
-    }
+    this.couch = new CouchPromised({
+      host: config.host,
+      port: config.port,
+      path: config.path,
+    });
 
-    this.qouch = new Qouch(config.url);
     this.kudu = kudu;
   }
 
   create( model ) {
-    return this.qouch.insert(model.toJSON(true));
+    return this.couch.insert(model.toJSON(true));
   }
 
   get( type, id ) {
@@ -45,8 +46,8 @@ export default class CouchAdapter {
       throw new Error('Invalid CouchDB descendant types view.');
     }
 
-    return this.qouch.viewDocs(doc.design, doc.view, {
-      rootKey: [ type ]
+    return this.couch.viewDocs(doc.design, doc.view, {
+      rootKey: [ type, ]
     })
     .then(( docs ) => docs.map(( doc ) => this.config.documentToModel(doc)));
   }
@@ -63,25 +64,25 @@ export default class CouchAdapter {
       throw new Error('Invalid CouchDB descendant types view.');
     }
 
-    return this.qouch.viewDocs(doc.design, doc.view, {
-      key: [ descendantType, ancestorType, ancestorId ]
+    return this.couch.viewDocs(doc.design, doc.view, {
+      key: [ descendantType, ancestorType, ancestorId, ]
     })
     .then(( docs ) => docs.map(( doc ) => this.config.documentToModel(doc)));
   }
 
   update( model ) {
-    return this.qouch.update(model.toJSON(true));
+    return this.couch.update(model.toJSON(true));
   }
 
   delete( model ) {
-    this.qouch.destroy(model.toJSON(true));
+    this.couch.destroy(model.toJSON(true));
   }
 
   // CouchDB-specific methods. Kudu database adapters must implement all of the
   // methods listed above. Any listed below are unique to CouchDB.
 
   getFromView( design = '', view = '', config = {} ) {
-    return this.qouch.viewDocs(design, view, config)
+    return this.couch.viewDocs(design, view, config)
     .then(( docs ) => docs.map(this.config.documentToModel));
   }
 }
