@@ -34,7 +34,7 @@ export default class CouchAdapter {
     .then(( doc ) => this.config.documentToModel(doc));
   }
 
-  getAll( type ) {
+  getAll( type, { max, offset } ) {
 
     let doc = this.config.views.types;
 
@@ -46,10 +46,27 @@ export default class CouchAdapter {
       throw new Error('Invalid CouchDB descendant types view.');
     }
 
-    return this.couch.viewDocs(doc.design, doc.view, {
-      rootKey: [ type, ]
-    })
-    .then(( docs ) => docs.map(( doc ) => this.config.documentToModel(doc)));
+    let viewOptions = {
+      rootKey: [ type, ],
+    };
+
+    if ( max ) {
+      viewOptions.limit = max;
+    }
+
+    if ( offset ) {
+      viewOptions.skip = offset;
+    }
+
+    return this.couch.view(doc.design, doc.view, viewOptions)
+    .then(( res ) => {
+
+      return {
+        rows: res.rows.map(( row ) => this.config.documentToModel(row.doc)),
+        totalRows: res.total_rows,
+        offset: res.offset,
+      };
+    });
   }
 
   getDescendants( ancestorType, ancestorId, descendantType ) {
