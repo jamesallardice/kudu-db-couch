@@ -48,6 +48,7 @@ export default class CouchAdapter {
 
     let viewOptions = {
       rootKey: [ type, ],
+      include_docs: true,
     };
 
     if ( max ) {
