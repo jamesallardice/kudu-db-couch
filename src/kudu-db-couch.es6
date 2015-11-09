@@ -8,11 +8,33 @@ export default class CouchAdapter {
   get [ defaults ]() {
     return {
       views: {},
-      documentToModel: ( doc ) => doc,
+      documentToModel: ( doc ) => {
+
+        // JSON API requires all documents to have an "id" property. CouchDB
+        // uses "_id" internally so we need to rename it.
+        if ( doc.id === undefined ) {
+          doc.id = doc._id;
+          delete doc._id;
+        }
+
+        return doc;
+      },
+      modelToDocument: ( model ) => {
+
+        // Again, since JSON API requires "id" properties and CouchDB requires
+        // "_id" we need to map that before we try to write our documents to
+        // CouchDB.
+        if ( model.id && model._id === undefined ) {
+          model._id = model.id;
+          delete model.id;
+        }
+
+        return model.toJSON(true);
+      }
     };
   }
 
-  constructor( kudu, config = {} ) {
+  constructor( config = {} ) {
 
     this.config = Object.assign({}, this[ defaults ], config);
 
@@ -21,20 +43,32 @@ export default class CouchAdapter {
       port: config.port,
       path: config.path,
     });
-
-    this.kudu = kudu;
   }
 
   create( model ) {
-    return this.couch.insert(model.toJSON(true));
+    return this.couch.insert(model.toJSON(true))
+    .then(( res ) => {
+
+      // CouchDB responds with an object containing the new document _id and
+      // _rev properties. We add them to the original object and return it.
+      if ( model.id === undefined ) {
+        model.id = res._id;
+      }
+
+      if ( model._rev === undefined ) {
+        model._rev = res._rev;
+      }
+
+      return model;
+    });
   }
 
   get( type, id ) {
-    return this.qouch.get(id)
+    return this.couch.get(id)
     .then(( doc ) => this.config.documentToModel(doc));
   }
 
-  getAll( type, { max, offset } ) {
+  getAll( Model, { max, offset } ) {
 
     let doc = this.config.views.types;
 
@@ -47,7 +81,7 @@ export default class CouchAdapter {
     }
 
     let viewOptions = {
-      rootKey: [ type, ],
+      rootKey: [ Model.singular, ],
       include_docs: true,
     };
 
@@ -89,7 +123,8 @@ export default class CouchAdapter {
   }
 
   update( model ) {
-    return this.couch.update(model.toJSON(true));
+    return this.couch.update(this.config.modelToDocument(model))
+    .then(( updatedDoc ) => this.config.documentToModel(updatedDoc));
   }
 
   delete( model ) {
